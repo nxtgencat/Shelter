@@ -23,6 +23,8 @@ import javax.crypto.spec.SecretKeySpec;
 // The private key is generated the first time this class is used, and then shared
 // across the profile boundary. Shelter will always trust the first key it receives.
 public class AuthenticationUtility {
+    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
     public static void signIntent(Intent intent) {
         String key = LocalStorageManager.getInstance().getString(
                 LocalStorageManager.PREF_AUTH_KEY);
@@ -86,7 +88,6 @@ public class AuthenticationUtility {
         }
     }
 
-    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
@@ -103,7 +104,7 @@ public class AuthenticationUtility {
             int len = s.length();
             if (len > 1) {
                 byte[] data = new byte[len / 2];
-                for (int i = 0 ; i < len ; i += 2) {
+                for (int i = 0; i < len; i += 2) {
                     data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
                             + Character.digit(s.charAt(i + 1), 16));
                 }

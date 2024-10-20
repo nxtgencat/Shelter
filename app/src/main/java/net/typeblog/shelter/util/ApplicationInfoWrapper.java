@@ -28,7 +28,8 @@ public class ApplicationInfoWrapper implements Parcelable {
     private String mLabel = null;
     private boolean mIsHidden = false;
 
-    private ApplicationInfoWrapper() {}
+    private ApplicationInfoWrapper() {
+    }
 
     public ApplicationInfoWrapper(ApplicationInfo info) {
         mInfo = info;
@@ -36,12 +37,6 @@ public class ApplicationInfoWrapper implements Parcelable {
 
     public ApplicationInfoWrapper loadLabel(PackageManager pm) {
         mLabel = pm.getApplicationLabel(mInfo).toString();
-        return this;
-    }
-
-    // Only used from ShelterService
-    public ApplicationInfoWrapper setHidden(boolean hidden) {
-        mIsHidden = hidden;
         return this;
     }
 
@@ -69,6 +64,12 @@ public class ApplicationInfoWrapper implements Parcelable {
 
     public boolean isHidden() {
         return mIsHidden;
+    }
+
+    // Only used from ShelterService
+    public ApplicationInfoWrapper setHidden(boolean hidden) {
+        mIsHidden = hidden;
+        return this;
     }
 
     public ApplicationInfo getInfo() {

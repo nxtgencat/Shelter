@@ -28,13 +28,148 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHolder> {
+    // The ORIGINAL list of applications without filtering
+    private List<ApplicationInfoWrapper> mOrigList = new ArrayList<>();
+    // The list of applications that is ACTUALLY displayed
+    // (after filtering by search query if applicable)
+    private List<ApplicationInfoWrapper> mList = new ArrayList<>();
+    private String mSearchQuery = null;
+    private IShelterService mService;
+    private Drawable mDefaultIcon;
+    private String mLabelDisabled;
+    private Map<String, Bitmap> mIconCache = new HashMap<>();
+    private ContextMenuHandler mContextMenuHandler = null;
+    private ActionModeHandler mActionModeHandler = null;
+    private ActionModeCancelHandler mActionModeCancelHandler = null;
+    private Handler mHandler = new Handler(Looper.getMainLooper());
+    // Multi-selection mode
+    private boolean mAllowMultiSelect = false;
+    private boolean mMultiSelectMode = false;
+    private List<Integer> mSelectedIndices = new ArrayList<>();
+    AppListAdapter(IShelterService service, Drawable defaultIcon) {
+        mService = service;
+        mDefaultIcon = defaultIcon;
+    }
+
+    void setContextMenuHandler(ContextMenuHandler handler) {
+        mContextMenuHandler = handler;
+    }
+
+    // When we enter multi-select mode, we have to notify our parent fragment
+    // to enter action mode, in order to show the specific menus
+    void setActionModeHandler(ActionModeHandler handler) {
+        mActionModeHandler = handler;
+    }
+
+    // When there is no selection left, we have to notify our parent fragment
+    // to exit action mode
+    void setActionModeCancelHandler(ActionModeCancelHandler handler) {
+        mActionModeCancelHandler = handler;
+    }
+
+    void allowMultiSelect() {
+        mAllowMultiSelect = true;
+    }
+
+    boolean isMultiSelectMode() {
+        return mMultiSelectMode;
+    }
+
+    void cancelMultiSelectMode() {
+        mMultiSelectMode = false;
+        mSelectedIndices.clear();
+        notifyDataSetChanged();
+    }
+
+    List<ApplicationInfoWrapper> getSelectedItems() {
+        if (!mMultiSelectMode) return null;
+        if (mSelectedIndices.size() == 0) return null;
+
+        return mSelectedIndices.stream()
+                .map((idx) -> mList.get(idx))
+                .collect(Collectors.toList());
+    }
+
+    void setData(List<ApplicationInfoWrapper> apps) {
+        mOrigList.clear();
+        mList.clear();
+        mIconCache.clear();
+        mOrigList.addAll(apps);
+        notifyChange();
+    }
+
+    // null = clear search query
+    void setSearchQuery(String query) {
+        mSearchQuery = query;
+        notifyChange();
+    }
+
+    // Call this on ACTUAL data set change and/or search query change
+    private void notifyChange() {
+        mList.clear();
+        if (mSearchQuery == null) {
+            // No search query, do not filter
+            mList.addAll(mOrigList);
+        } else {
+            // Filter by search query
+            mList.addAll(mOrigList.stream()
+                    .filter((app) ->
+                            app.getPackageName().toLowerCase().contains(mSearchQuery)
+                                    || app.getLabel().toLowerCase().contains(mSearchQuery))
+                    .collect(Collectors.toList()));
+        }
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemCount() {
+        return mList.size();
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        if (mLabelDisabled == null) {
+            mLabelDisabled = viewGroup.getContext().getString(R.string.list_item_disabled);
+        }
+        LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
+        View view = inflater.inflate(R.layout.app_list_item, viewGroup, false);
+        ViewHolder vh = new ViewHolder(view);
+        vh.setIndex(i);
+        return vh;
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
+        viewHolder.setIndex(i);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        holder.setIndex(-1);
+    }
+
+    interface ContextMenuHandler {
+        void showContextMenu(ApplicationInfoWrapper info, View view);
+    }
+
+    interface ActionModeHandler {
+        boolean createActionMode();
+    }
+
+    interface ActionModeCancelHandler {
+        void cancelActionMode();
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder {
+        int mIndex = -1;
         private ImageView mIcon;
         private TextView mTitle;
         private TextView mPackage;
         // This text view shows the order of all selected items
         private TextView mSelectOrder;
-        int mIndex = -1;
+
         ViewHolder(View view) {
             super(view);
             mIcon = view.findViewById(R.id.list_app_icon);
@@ -205,141 +340,5 @@ public class AppListAdapter extends RecyclerView.Adapter<AppListAdapter.ViewHold
                 }
             }
         }
-    }
-
-    interface ContextMenuHandler {
-        void showContextMenu(ApplicationInfoWrapper info, View view);
-    }
-
-    interface ActionModeHandler {
-        boolean createActionMode();
-    }
-
-    interface ActionModeCancelHandler {
-        void cancelActionMode();
-    }
-
-    // The ORIGINAL list of applications without filtering
-    private List<ApplicationInfoWrapper> mOrigList = new ArrayList<>();
-    // The list of applications that is ACTUALLY displayed
-    // (after filtering by search query if applicable)
-    private List<ApplicationInfoWrapper> mList = new ArrayList<>();
-    private String mSearchQuery = null;
-    private IShelterService mService;
-    private Drawable mDefaultIcon;
-    private String mLabelDisabled;
-    private Map<String, Bitmap> mIconCache = new HashMap<>();
-    private ContextMenuHandler mContextMenuHandler = null;
-    private ActionModeHandler mActionModeHandler = null;
-    private ActionModeCancelHandler mActionModeCancelHandler = null;
-    private Handler mHandler = new Handler(Looper.getMainLooper());
-
-    // Multi-selection mode
-    private boolean mAllowMultiSelect = false;
-    private boolean mMultiSelectMode = false;
-    private List<Integer> mSelectedIndices = new ArrayList<>();
-
-    AppListAdapter(IShelterService service, Drawable defaultIcon) {
-        mService = service;
-        mDefaultIcon = defaultIcon;
-    }
-
-    void setContextMenuHandler(ContextMenuHandler handler) {
-        mContextMenuHandler = handler;
-    }
-
-    // When we enter multi-select mode, we have to notify our parent fragment
-    // to enter action mode, in order to show the specific menus
-    void setActionModeHandler(ActionModeHandler handler) {
-        mActionModeHandler = handler;
-    }
-
-    // When there is no selection left, we have to notify our parent fragment
-    // to exit action mode
-    void setActionModeCancelHandler(ActionModeCancelHandler handler) {
-        mActionModeCancelHandler = handler;
-    }
-
-    void allowMultiSelect() {
-        mAllowMultiSelect = true;
-    }
-
-    boolean isMultiSelectMode() {
-        return mMultiSelectMode;
-    }
-
-    void cancelMultiSelectMode() {
-        mMultiSelectMode = false;
-        mSelectedIndices.clear();
-        notifyDataSetChanged();
-    }
-
-    List<ApplicationInfoWrapper> getSelectedItems() {
-        if (!mMultiSelectMode) return null;
-        if (mSelectedIndices.size() == 0) return null;
-
-        return mSelectedIndices.stream()
-                .map((idx) -> mList.get(idx))
-                .collect(Collectors.toList());
-    }
-
-    void setData(List<ApplicationInfoWrapper> apps) {
-        mOrigList.clear();
-        mList.clear();
-        mIconCache.clear();
-        mOrigList.addAll(apps);
-        notifyChange();
-    }
-
-    // null = clear search query
-    void setSearchQuery(String query) {
-        mSearchQuery = query;
-        notifyChange();
-    }
-
-    // Call this on ACTUAL data set change and/or search query change
-    private void notifyChange() {
-        mList.clear();
-        if (mSearchQuery == null) {
-            // No search query, do not filter
-            mList.addAll(mOrigList);
-        } else {
-            // Filter by search query
-            mList.addAll(mOrigList.stream()
-                    .filter((app) ->
-                            app.getPackageName().toLowerCase().contains(mSearchQuery)
-                                    || app.getLabel().toLowerCase().contains(mSearchQuery))
-                    .collect(Collectors.toList()));
-        }
-        notifyDataSetChanged();
-    }
-
-    @Override
-    public int getItemCount() {
-        return mList.size();
-    }
-
-    @NonNull
-    @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        if (mLabelDisabled == null) {
-            mLabelDisabled = viewGroup.getContext().getString(R.string.list_item_disabled);
-        }
-        LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-        View view = inflater.inflate(R.layout.app_list_item, viewGroup, false);
-        ViewHolder vh = new ViewHolder(view);
-        vh.setIndex(i);
-        return vh;
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int i) {
-        viewHolder.setIndex(i);
-    }
-
-    @Override
-    public void onViewRecycled(@NonNull ViewHolder holder) {
-        super.onViewRecycled(holder);
-        holder.setIndex(-1);
     }
 }

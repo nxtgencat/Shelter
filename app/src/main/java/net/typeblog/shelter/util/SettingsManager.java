@@ -10,6 +10,12 @@ import net.typeblog.shelter.ui.DummyActivity;
 
 public class SettingsManager {
     private static SettingsManager sInstance = null;
+    private LocalStorageManager mStorage = LocalStorageManager.getInstance();
+    private Context mContext;
+
+    private SettingsManager(Context context) {
+        mContext = context;
+    }
 
     public static void initialize(Context context) {
         sInstance = new SettingsManager(context);
@@ -17,13 +23,6 @@ public class SettingsManager {
 
     public static SettingsManager getInstance() {
         return sInstance;
-    }
-
-    private LocalStorageManager mStorage = LocalStorageManager.getInstance();
-    private Context mContext;
-
-    private SettingsManager(Context context) {
-        mContext = context;
     }
 
     private void syncSettingsToProfileBool(String name, boolean value) {
@@ -59,6 +58,11 @@ public class SettingsManager {
                 PackageManager.DONT_KILL_APP);
     }
 
+    // Get the enabled state of the cross profile file chooser
+    public boolean getCrossProfileFileChooserEnabled() {
+        return mStorage.getBoolean(LocalStorageManager.PREF_CROSS_PROFILE_FILE_CHOOSER);
+    }
+
     // Set the enabled state of the cross profile file chooser
     public void setCrossProfileFileChooserEnabled(boolean enabled) {
         mStorage.setBoolean(LocalStorageManager.PREF_CROSS_PROFILE_FILE_CHOOSER, enabled);
@@ -66,9 +70,9 @@ public class SettingsManager {
         syncSettingsToProfileBool(LocalStorageManager.PREF_CROSS_PROFILE_FILE_CHOOSER, enabled);
     }
 
-    // Get the enabled state of the cross profile file chooser
-    public boolean getCrossProfileFileChooserEnabled() {
-        return mStorage.getBoolean(LocalStorageManager.PREF_CROSS_PROFILE_FILE_CHOOSER);
+    // Get the blocked state of cross-profile contacts searching
+    public boolean getBlockContactsSearchingEnabled() {
+        return mStorage.getBoolean(LocalStorageManager.PREF_BLOCK_CONTACTS_SEARCHING);
     }
 
     // Set the blocked state of cross-profile contacts searching
@@ -77,26 +81,15 @@ public class SettingsManager {
         syncSettingsToProfileBool(LocalStorageManager.PREF_BLOCK_CONTACTS_SEARCHING, enabled);
     }
 
-    // Get the blocked state of cross-profile contacts searching
-    public boolean getBlockContactsSearchingEnabled() {
-        return mStorage.getBoolean(LocalStorageManager.PREF_BLOCK_CONTACTS_SEARCHING);
+    // Get the enabled state of the auto freeze service
+    public boolean getAutoFreezeServiceEnabled() {
+        return mStorage.getBoolean(LocalStorageManager.PREF_AUTO_FREEZE_SERVICE);
     }
 
     // Set the enabled state of the auto freeze service
     // This does NOT need to be synchronized nor applied across profile
     public void setAutoFreezeServiceEnabled(boolean enabled) {
         mStorage.setBoolean(LocalStorageManager.PREF_AUTO_FREEZE_SERVICE, enabled);
-    }
-
-    // Get the enabled state of the auto freeze service
-    public boolean getAutoFreezeServiceEnabled() {
-        return mStorage.getBoolean(LocalStorageManager.PREF_AUTO_FREEZE_SERVICE);
-    }
-
-    // Set the delay for auto freeze service (in seconds)
-    public void setAutoFreezeDelay(int seconds) {
-        mStorage.setInt(LocalStorageManager.PREF_AUTO_FREEZE_DELAY, seconds);
-        syncSettingsToProfileInt(LocalStorageManager.PREF_AUTO_FREEZE_DELAY, seconds);
     }
 
     // Get the delay for auto freeze service
@@ -109,15 +102,21 @@ public class SettingsManager {
         return ret;
     }
 
-    // Set the enabled state of "skip foreground"
-    public void setSkipForegroundEnabled(boolean enabled) {
-        mStorage.setBoolean(LocalStorageManager.PREF_DONT_FREEZE_FOREGROUND, enabled);
-        syncSettingsToProfileBool(LocalStorageManager.PREF_DONT_FREEZE_FOREGROUND, enabled);
+    // Set the delay for auto freeze service (in seconds)
+    public void setAutoFreezeDelay(int seconds) {
+        mStorage.setInt(LocalStorageManager.PREF_AUTO_FREEZE_DELAY, seconds);
+        syncSettingsToProfileInt(LocalStorageManager.PREF_AUTO_FREEZE_DELAY, seconds);
     }
 
     // Get the enabled state of "skip foreground"
     public boolean getSkipForegroundEnabled() {
         return mStorage.getBoolean(LocalStorageManager.PREF_DONT_FREEZE_FOREGROUND);
+    }
+
+    // Set the enabled state of "skip foreground"
+    public void setSkipForegroundEnabled(boolean enabled) {
+        mStorage.setBoolean(LocalStorageManager.PREF_DONT_FREEZE_FOREGROUND, enabled);
+        syncSettingsToProfileBool(LocalStorageManager.PREF_DONT_FREEZE_FOREGROUND, enabled);
     }
 
     public boolean getPaymentStubEnabled() {

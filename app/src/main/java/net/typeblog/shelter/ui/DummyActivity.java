@@ -3,7 +3,6 @@ package net.typeblog.shelter.ui;
 import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -16,15 +15,10 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.StrictMode;
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
 import net.typeblog.shelter.R;
@@ -89,7 +83,7 @@ public class DummyActivity extends Activity {
             UNFREEZE_AND_LAUNCH);
 
     private static final int REQUEST_INSTALL_PACKAGE = 1;
-    private static final int REQUEST_PERMISSION_EXTERNAL_STORAGE= 2;
+    private static final int REQUEST_PERMISSION_EXTERNAL_STORAGE = 2;
     private static final int REQUEST_PERMISSION_POST_NOTIFICATIONS = 3;
 
     private static boolean sHasRequestedPermission = false;
@@ -99,6 +93,8 @@ public class DummyActivity extends Activity {
     // Since they must be in the same process as DummyActivity, it will be totally fine
     // to share a memory state
     private static volatile long sLastSameProcessRequest = -1;
+    private boolean mIsProfileOwner = false;
+    private DevicePolicyManager mPolicyManager = null;
 
     // Register that an intent will be sent to this Activity without signature
     // from the same process. Each registration is allowed for at most 5 seconds.
@@ -119,9 +115,6 @@ public class DummyActivity extends Activity {
 
         return ret;
     }
-
-    private boolean mIsProfileOwner = false;
-    private DevicePolicyManager mPolicyManager = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -474,7 +467,7 @@ public class DummyActivity extends Activity {
             intent.putExtra("shouldFreeze",
                     SettingsManager.getInstance().getAutoFreezeServiceEnabled() &&
                             LocalStorageManager.getInstance()
-                                .stringListContains(LocalStorageManager.PREF_AUTO_FREEZE_LIST_WORK_PROFILE, packageName));
+                                    .stringListContains(LocalStorageManager.PREF_AUTO_FREEZE_LIST_WORK_PROFILE, packageName));
             if (getIntent().hasExtra("linkedPackages")) {
                 // Multiple apps should be unfrozen here
                 String[] packages = getIntent().getStringExtra("linkedPackages").split(",");

@@ -1,7 +1,6 @@
 package net.typeblog.shelter.services;
 
 import android.app.Service;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -37,11 +36,22 @@ import java.util.Map;
 // A service to forward file information across the profile boundary
 public class FileShuttleService extends Service {
     public static final long TIMEOUT = 10000;
-    // Periodic task to stop the service when idle.
+    private Handler mHandler = new Handler(Looper.getMainLooper());    // Periodic task to stop the service when idle.
     // This service does not need to persist.
     private Runnable mSuicideTask = this::suicide;
-    private Handler mHandler = new Handler(Looper.getMainLooper());
-    private IFileShuttleService.Stub mStub = new IFileShuttleService.Stub() {
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        resetSuicideTask();
+        return mStub;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        android.util.Log.d("FileShuttleService", "being destroyed");
+    }    private IFileShuttleService.Stub mStub = new IFileShuttleService.Stub() {
         @Override
         public void ping() {
             // Dummy method
@@ -198,19 +208,6 @@ public class FileShuttleService extends Service {
         }
     };
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        resetSuicideTask();
-        return mStub;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        android.util.Log.d("FileShuttleService", "being destroyed");
-    }
-
     private String resolvePath(String path) {
         if (path.startsWith(CrossProfileDocumentsProvider.DUMMY_ROOT)) {
             return path.replaceFirst(CrossProfileDocumentsProvider.DUMMY_ROOT,
@@ -315,4 +312,8 @@ public class FileShuttleService extends Service {
             sendBroadcast(intent);
         }
     }
+
+
+
+
 }

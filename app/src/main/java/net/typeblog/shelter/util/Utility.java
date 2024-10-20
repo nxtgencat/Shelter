@@ -51,6 +51,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class Utility {
+    // Utilities to build notifications for cross-version compatibility
+    private static final String NOTIFICATION_CHANNEL_ID = "ShelterService";
+    private static final String NOTIFICATION_CHANNEL_IMPORTANT = "ShelterService-Important";
+
     // Determine if the current app is the owner of the current profile
     // TODO: Replace all occurrences of duplicated code to call this function instead
     public static boolean isProfileOwner(Context context) {
@@ -202,7 +206,7 @@ public class Utility {
                 adminComponent,
                 actionSendFilter,
                 DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED);
-        
+
         // Browser intents are allowed from work profile to parent
         IntentFilter browsableIntentFilter = new IntentFilter(Intent.ACTION_VIEW);
         browsableIntentFilter.addCategory(Intent.CATEGORY_BROWSABLE);
@@ -260,7 +264,7 @@ public class Utility {
     // From <https://stackoverflow.com/questions/3035692/how-to-convert-a-drawable-to-a-bitmap>
     public static Bitmap drawableToBitmap(Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable)drawable).getBitmap();
+            return ((BitmapDrawable) drawable).getBitmap();
         }
 
         int width = drawable.getIntrinsicWidth();
@@ -440,9 +444,6 @@ public class Utility {
         }
     }
 
-    // Utilities to build notifications for cross-version compatibility
-    private static final String NOTIFICATION_CHANNEL_ID = "ShelterService";
-    private static final String NOTIFICATION_CHANNEL_IMPORTANT = "ShelterService-Important";
     public static Notification buildNotification(Context context, String ticker, String title, String desc, int icon) {
         return buildNotification(context, false, ticker, title, desc, icon);
     }

@@ -43,35 +43,28 @@ import net.typeblog.shelter.util.Utility;
 public class MainActivity extends AppCompatActivity {
     public static final String BROADCAST_CONTEXT_MENU_CLOSED = "net.typeblog.shelter.broadcast.CONTEXT_MENU_CLOSED";
     public static final String BROADCAST_SEARCH_FILTER_CHANGED = "net.typeblog.shelter.broadcast.SEARCH_FILTER_CHANGED";
-
-    private final ActivityResultLauncher<Void> mStartSetup =
+    // Show all applications or not
+    // default to false
+    boolean mShowAll = false;    private final ActivityResultLauncher<Void> mStartSetup =
             registerForActivityResult(new SetupWizardActivity.SetupWizardContract(), this::setupWizardCb);
-    private final ActivityResultLauncher<Void> mResumeSetup =
+    private LocalStorageManager mStorage = null;    private final ActivityResultLauncher<Void> mResumeSetup =
             registerForActivityResult(new SetupWizardActivity.ResumeSetupContract(), this::setupWizardCb);
+    // Flag to avoid double-killing our services while restarting
+    private boolean mRestarting = false;
+    // Two services running in main / work profile
+    private IShelterService mServiceMain = null;
+    private IShelterService mServiceWork = null;
     private final ActivityResultLauncher<Void> mSelectApk =
             registerForActivityResult(
                     new Utility.ActivityResultContractInputWrapper<>(
                             new ActivityResultContracts.OpenDocument(),
                             new String[]{"application/vnd.android.package-archive"}),
                     this::onApkSelected);
+    private final ActivityResultLauncher<Intent> mBindWorkService =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::bindWorkServiceCb);
     // Logic of the following intents are quite complicated; use the generic contract for more control
     private final ActivityResultLauncher<Intent> mTryStartWorkService =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::tryStartWorkServiceCb);
-    private final ActivityResultLauncher<Intent> mBindWorkService =
-            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), this::bindWorkServiceCb);
-
-    private LocalStorageManager mStorage = null;
-
-    // Flag to avoid double-killing our services while restarting
-    private boolean mRestarting = false;
-
-    // Two services running in main / work profile
-    private IShelterService mServiceMain = null;
-    private IShelterService mServiceWork = null;
-
-    // Show all applications or not
-    // default to false
-    boolean mShowAll = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -463,4 +456,8 @@ public class MainActivity extends AppCompatActivity {
             // Well, I don't know what to do then
         }
     }
+
+
+
+
 }

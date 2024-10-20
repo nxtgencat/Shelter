@@ -232,10 +232,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Prefer
         }
     }
 
-    private interface CheckPermissionCallback {
-        boolean check();
-    }
-
     private boolean ensureSpecialAccessPermission(CheckPermissionCallback checkPermission, int alertRes, String settingsAction) {
         if (!checkPermission.check()) {
             new AlertDialog.Builder(getContext())
@@ -249,5 +245,9 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Prefer
         } else {
             return true;
         }
+    }
+
+    private interface CheckPermissionCallback {
+        boolean check();
     }
 }

@@ -1,33 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:installLocation="internalOnly" >
-
-    <uses-feature android:name="android.software.device_admin" android:required="true"/>
-    <uses-feature android:name="android.software.managed_users" android:required="true"/>
-
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
-    <uses-permission android:maxSdkVersion="25"
-        android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.NFC" />
-
-    <!-- For querying apps on Android R and later -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.MAIN"/>
-        </intent>
-    </queries>
+    android:installLocation="internalOnly">
 
     <application
         android:name=".ShelterApplication"
@@ -39,9 +13,10 @@
         android:theme="@style/AppTheme">
 
         <!-- The main activity for UI -->
-        <activity android:name=".ui.MainActivity"
-            android:launchMode="singleTask"
-            android:exported="true">
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -49,22 +24,25 @@
         </activity>
 
         <!-- Setup Wizard -->
-        <activity android:name=".ui.SetupWizardActivity"
-            android:theme="@style/SuwThemeMaterial.Light"
+        <activity
+            android:name=".ui.SetupWizardActivity"
+            android:exported="false"
             android:launchMode="singleTask"
-            android:exported="false"/>
+            android:theme="@style/SuwThemeMaterial.Light" />
 
         <!-- The Settings activity -->
-        <activity android:name=".ui.SettingsActivity"
+        <activity
+            android:name=".ui.SettingsActivity"
             android:label="@string/settings" />
 
         <!-- An activity that wraps intents that cross the profile boundary -->
         <!-- Needed because only cross-profile Activity intents are supported -->
-        <activity android:name=".ui.DummyActivity"
+        <activity
+            android:name=".ui.DummyActivity"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
-            android:exported="true">
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="net.typeblog.shelter.action.FINALIZE_PROVISION" />
                 <action android:name="net.typeblog.shelter.action.START_SERVICE" />
@@ -81,18 +59,20 @@
                 <action android:name="net.typeblog.shelter.action.START_FILE_SHUTTLE_2" />
                 <action android:name="net.typeblog.shelter.action.SYNCHRONIZE_PREFERENCE" />
                 <action android:name="net.typeblog.shelter.action.PACKAGEINSTALLER_CALLBACK" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
         <!-- An activity to listen to ACTION_PROVISIONING_SUCCESSFUL for finalization -->
         <!-- This replaces the functionality of ShelterDeviceAdminReceiver on Oreo and above -->
-        <activity android:name=".ui.FinalizeActivity"
+        <activity
+            android:name=".ui.FinalizeActivity"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.app.action.PROVISIONING_SUCCESSFUL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -100,76 +80,116 @@
         </activity>
 
         <!-- Implementation of the device policy controller -->
-        <receiver android:name=".receivers.ShelterDeviceAdminReceiver"
-            android:label="@string/device_admin_label"
-            android:description="@string/device_admin_desc"
-            android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">
-            <meta-data android:name="android.app.device_admin"
-                android:resource="@xml/device_admin" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
-                <action android:name="android.app.action.PROVISION_MANAGED_PROFILE" />
-            </intent-filter>
-        </receiver>
-
-        <!-- A FileProvider that proxies opened Fd from the other profile -->
         <provider
             android:name="net.typeblog.shelter.util.FileProviderProxy"
             android:authorities="net.typeblog.shelter.files"
-            android:grantUriPermissions="true"
-            android:exported="false">
+            android:exported="false"
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- A DocumentsProvider that lists files in another profile -->
+        <!-- A FileProvider that proxies opened Fd from the other profile -->
         <provider
             android:name="net.typeblog.shelter.util.CrossProfileDocumentsProvider"
             android:authorities="net.typeblog.shelter.documents"
-            android:grantUriPermissions="true"
-            android:permission="android.permission.MANAGE_DOCUMENTS"
+            android:enabled="false"
             android:exported="true"
-            android:enabled="false">
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
             <intent-filter>
                 <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
             </intent-filter>
         </provider>
 
+        <!-- A DocumentsProvider that lists files in another profile -->
+        <receiver
+            android:name=".receivers.ShelterDeviceAdminReceiver"
+            android:description="@string/device_admin_desc"
+            android:exported="true"
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.DEVICE_ADMIN_DISABLED" />
+                <action android:name="android.app.action.PROVISION_MANAGED_PROFILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+        </receiver>
+
         <!-- Core service running on both the main profile and the work profile -->
         <!-- Actions like cloning / freezing apps will be performed by this service -->
-        <service android:name=".services.ShelterService"
-                android:exported="true"
-                android:foregroundServiceType="systemExempted"
-                android:permission="android.permission.BIND_DEVICE_ADMIN"/>
+        <service
+            android:name=".services.ShelterService"
+            android:exported="true"
+            android:foregroundServiceType="systemExempted"
+            android:permission="android.permission.BIND_DEVICE_ADMIN" />
 
         <!-- Service to forward file information between profiles -->
-        <service android:name=".services.FileShuttleService"
-                android:exported="true"
-                android:permission="android.permission.BIND_DEVICE_ADMIN" />
+        <service
+            android:name=".services.FileShuttleService"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN" />
 
         <!-- A hack service to ensure every ShelterService is killed when App is removed -->
         <!-- from recent tasks -->
         <service android:name=".services.KillerService" />
 
         <!-- Service to freeze apps on screen lock -->
-        <service android:name=".services.FreezeService"
+        <service
+            android:name=".services.FreezeService"
             android:foregroundServiceType="systemExempted" />
 
         <!-- Payment stub service -->
-        <service android:name=".services.PaymentStubService"
-            android:exported="true"
+        <service
+            android:name=".services.PaymentStubService"
             android:enabled="false"
+            android:exported="true"
             android:permission="android.permission.BIND_NFC_SERVICE">
             <intent-filter>
-                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE"/>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
             </intent-filter>
-            <meta-data android:name="android.nfc.cardemulation.host_apdu_service"
-                android:resource="@xml/payment_stub"/>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/payment_stub" />
         </service>
 
     </application>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
+
+    <uses-feature
+        android:name="android.software.device_admin"
+        android:required="true" />
+    <uses-feature
+        android:name="android.software.managed_users"
+        android:required="true" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
+    <uses-permission
+        android:name="com.android.launcher.permission.INSTALL_SHORTCUT"
+        android:maxSdkVersion="25" />
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- For querying apps on Android R and later -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-permission android:name="android.permission.NFC" />
 
 </manifest>

@@ -33,28 +33,25 @@ import java.util.Map;
 // will freeze all the apps that the user launched through Unfreeze & Launch
 // during the last session.
 public class FreezeService extends Service {
+    // An app being inactive for this amount of time will be frozen
+    private static final long APP_INACTIVE_TIMEOUT = 1000;
+    // Notification ID
+    private static final int NOTIFICATION_ID = 0xe49c0;
     // Use a static variable and static methods to store the current list to be frozen
     // We don't need to run this service in another process, so the static context should
     // be sufficient for this. DummyActivity will use these static methods to add more apps
     // to the list
     private static List<String> sAppToFreeze = new ArrayList<>();
-    public static synchronized void registerAppToFreeze(String app) {
-        if (!sAppToFreeze.contains(app)) {
-            sAppToFreeze.add(app);
-        }
-    }
-
-    public static synchronized boolean hasPendingAppToFreeze() {
-        return sAppToFreeze.size() > 0;
-    }
-
-    // An app being inactive for this amount of time will be frozen
-    private static final long APP_INACTIVE_TIMEOUT = 1000;
-
-    // Notification ID
-    private static final int NOTIFICATION_ID = 0xe49c0;
-
-    // The actual receiver of the screen-off event
+    // Usage statistics when the screen was locked
+    // We keep it here since we need the data AT THE MOMENT when screen gets locked
+    // If we don't have the permission to use UsageStats
+    // or "do not freeze foreground apps" is not enabled,
+    // then we won't need any usage stats, so we just keep
+    // it empty in those cases
+    private Map<String, UsageStats> mUsageStats = new HashMap<>();
+    private long mScreenLockTime = -1;
+    // Delayed work
+    private AlarmManager mAlarmManager;    // The actual receiver of the screen-off event
     private BroadcastReceiver mLockReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -78,7 +75,11 @@ public class FreezeService extends Service {
         }
     };
 
-    // The receiver of the screen-on event
+    public static synchronized void registerAppToFreeze(String app) {
+        if (!sAppToFreeze.contains(app)) {
+            sAppToFreeze.add(app);
+        }
+    }    // The receiver of the screen-on event
     // Cancels the freeze job if the designated delay has not passed
     private BroadcastReceiver mUnlockReceiver = new BroadcastReceiver() {
         @Override
@@ -87,44 +88,9 @@ public class FreezeService extends Service {
         }
     };
 
-    // Usage statistics when the screen was locked
-    // We keep it here since we need the data AT THE MOMENT when screen gets locked
-    // If we don't have the permission to use UsageStats
-    // or "do not freeze foreground apps" is not enabled,
-    // then we won't need any usage stats, so we just keep
-    // it empty in those cases
-    private Map<String, UsageStats> mUsageStats = new HashMap<>();
-    private long mScreenLockTime = -1;
-
-    // Delayed work
-    private AlarmManager mAlarmManager;
-
-    private AlarmManager.OnAlarmListener mFreezeWork = () -> {
-        synchronized (FreezeService.class) {
-            // Cancel the unlock receiver first - the delay has passed if this work is executed
-            unregisterReceiver(mUnlockReceiver);
-
-            if (sAppToFreeze.size() > 0) {
-                DevicePolicyManager dpm = getSystemService(DevicePolicyManager.class);
-                ComponentName adminComponent = new ComponentName(FreezeService.this, ShelterDeviceAdminReceiver.class);
-                for (String app : sAppToFreeze) {
-                    boolean shouldFreeze = true;
-                    UsageStats stats =  mUsageStats.get(app);
-                    if (stats != null && mScreenLockTime - stats.getLastTimeUsed() <= APP_INACTIVE_TIMEOUT &&
-                            stats.getTotalTimeInForeground() >= APP_INACTIVE_TIMEOUT) {
-                        // Don't freeze foreground apps if requested
-                        shouldFreeze = false;
-                    }
-
-                    if (shouldFreeze) {
-                        dpm.setApplicationHidden(adminComponent, app, true);
-                    }
-                }
-                sAppToFreeze.clear();
-            }
-            stopSelf();
-        }
-    };
+    public static synchronized boolean hasPendingAppToFreeze() {
+        return sAppToFreeze.size() > 0;
+    }
 
     @Override
     public void onCreate() {
@@ -146,7 +112,32 @@ public class FreezeService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
+    }    private AlarmManager.OnAlarmListener mFreezeWork = () -> {
+        synchronized (FreezeService.class) {
+            // Cancel the unlock receiver first - the delay has passed if this work is executed
+            unregisterReceiver(mUnlockReceiver);
+
+            if (sAppToFreeze.size() > 0) {
+                DevicePolicyManager dpm = getSystemService(DevicePolicyManager.class);
+                ComponentName adminComponent = new ComponentName(FreezeService.this, ShelterDeviceAdminReceiver.class);
+                for (String app : sAppToFreeze) {
+                    boolean shouldFreeze = true;
+                    UsageStats stats = mUsageStats.get(app);
+                    if (stats != null && mScreenLockTime - stats.getLastTimeUsed() <= APP_INACTIVE_TIMEOUT &&
+                            stats.getTotalTimeInForeground() >= APP_INACTIVE_TIMEOUT) {
+                        // Don't freeze foreground apps if requested
+                        shouldFreeze = false;
+                    }
+
+                    if (shouldFreeze) {
+                        dpm.setApplicationHidden(adminComponent, app, true);
+                    }
+                }
+                sAppToFreeze.clear();
+            }
+            stopSelf();
+        }
+    };
 
     private void setForeground() {
         Notification notification = Utility.buildNotification(this,
@@ -162,7 +153,7 @@ public class FreezeService extends Service {
         // The intent for the shortcut lives in the main profile, while this
         // service runs in the work profile.
         Utility.transferIntentToProfileUnsigned(this, intentFreeze);
-        notification.actions = new Notification.Action[] {
+        notification.actions = new Notification.Action[]{
                 new Notification.Action.Builder(
                         null, getString(R.string.service_auto_freeze_now),
                         PendingIntent.getActivity(this, 0, intentFreeze, PendingIntent.FLAG_IMMUTABLE)
@@ -172,4 +163,10 @@ public class FreezeService extends Service {
         // Show the notification and begin foreground operation
         startForeground(NOTIFICATION_ID, notification);
     }
+
+
+
+
+
+
 }

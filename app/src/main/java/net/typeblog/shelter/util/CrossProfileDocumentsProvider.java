@@ -33,17 +33,17 @@ public class CrossProfileDocumentsProvider extends DocumentsProvider {
     // The dummy root path that will be replaced by the real path to external storage on the other side
     public static final String DUMMY_ROOT = "/shelter_storage_root/";
     private static final String AUTHORITY = "net.typeblog.shelter.documents";
-    private static final String[] DEFAULT_ROOT_PROJECTION = new String[] {
+    private static final String[] DEFAULT_ROOT_PROJECTION = new String[]{
             DocumentsContract.Root.COLUMN_ROOT_ID,
             DocumentsContract.Root.COLUMN_DOCUMENT_ID, DocumentsContract.Root.COLUMN_ICON,
             DocumentsContract.Root.COLUMN_TITLE, DocumentsContract.Root.COLUMN_FLAGS
     };
-    private static final String[] DEFAULT_DOCUMENT_PROJECTION = new String[] {
+    private static final String[] DEFAULT_DOCUMENT_PROJECTION = new String[]{
             DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
             DocumentsContract.Document.COLUMN_FLAGS, DocumentsContract.Document.COLUMN_MIME_TYPE,
             DocumentsContract.Document.COLUMN_SIZE, DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
-
+    private final Object mLock = new Object();
     private IFileShuttleService mService = null;
     private Handler mHandler = new Handler(Looper.getMainLooper());
     // Periodic task to release the handle to the service
@@ -51,7 +51,6 @@ public class CrossProfileDocumentsProvider extends DocumentsProvider {
     // We just release the service when idle, thus enabling the
     // system to release memory
     private Runnable mReleaseServiceTask = this::releaseService;
-    private final Object mLock = new Object();
 
     private void doBindService() {
         // Call DummyActivity on the other side to bind the service for us
